@@ -8,22 +8,18 @@ import LandlordDashboard from './pages/LandlordDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
-  // Authentication state - check localStorage on mount
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true';
   });
 
-  // User role state - check localStorage on mount
   const [userRole, setUserRole] = useState(() => {
     return localStorage.getItem('userRole') || null;
   });
 
-  // Save authentication state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('isAuthenticated', isAuthenticated);
   }, [isAuthenticated]);
 
-  // Save user role to localStorage whenever it changes
   useEffect(() => {
     if (userRole) {
       localStorage.setItem('userRole', userRole);
@@ -32,13 +28,11 @@ function App() {
     }
   }, [userRole]);
 
-  // Function to handle login
   const handleLogin = (role) => {
     setIsAuthenticated(true);
-    setUserRole(role); // role should be 'tenant', 'landlord', or 'admin'
+    setUserRole(role);
   };
 
-  // Function to handle logout
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserRole(null);
@@ -46,29 +40,14 @@ function App() {
     localStorage.removeItem('userRole');
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    // Force navigation to landing page
     window.location.href = '/';
   };
 
-  // Component to route to correct dashboard based on role
   const DashboardRouter = () => {
-    if (!isAuthenticated) {
-      return <Navigate to="/signin" replace />;
-    }
-
-    if (userRole === 'admin') {
-      return <Navigate to="/admin-dashboard" replace />;
-    }
-
-    if (userRole === 'landlord') {
-      return <Navigate to="/landlord-dashboard" replace />;
-    }
-
-    if (userRole === 'tenant') {
-      return <Navigate to="/tenant-dashboard" replace />;
-    }
-
-    // If no role is set, redirect to signin
+    if (!isAuthenticated) return <Navigate to="/signin" replace />;
+    if (userRole === 'admin') return <Navigate to="/admin-dashboard" replace />;
+    if (userRole === 'landlord') return <Navigate to="/landlord-dashboard" replace />;
+    if (userRole === 'tenant') return <Navigate to="/tenant-dashboard" replace />;
     return <Navigate to="/signin" replace />;
   };
 
@@ -78,31 +57,17 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
 
-        {/* Auth Routes - redirect to appropriate dashboard if already authenticated */}
-        <Route
-          path="/signin"
-          element={
-            isAuthenticated ?
-            <DashboardRouter /> :
-            <SignIn onLogin={handleLogin} />
-          }
-        />
-        <Route
-          path="/signup"
-          element={
-            isAuthenticated ?
-            <DashboardRouter /> :
-            <SignUp onLogin={handleLogin} />
-          }
-        />
+        {/* Auth Routes */}
+        <Route path="/signin" element={isAuthenticated ? <DashboardRouter /> : <SignIn onLogin={handleLogin} />} />
+        <Route path="/signup" element={isAuthenticated ? <DashboardRouter /> : <SignUp onLogin={handleLogin} />} />
 
-        {/* Public Route - Tenant Dashboard (no login required) */}
+        {/* Tenant Dashboard - public, no login needed */}
         <Route
           path="/tenant-dashboard"
-          element={<Dashboard onLogout={handleLogout} />}
+          element={<Dashboard onLogout={handleLogout} onLogin={handleLogin} />}
         />
 
-        {/* Protected Routes - Landlord Dashboard */}
+        {/* Landlord Dashboard - protected */}
         <Route
           path="/landlord-dashboard"
           element={
@@ -112,7 +77,7 @@ function App() {
           }
         />
 
-        {/* Protected Routes - Admin Dashboard */}
+        {/* Admin Dashboard - protected */}
         <Route
           path="/admin-dashboard"
           element={
@@ -122,13 +87,10 @@ function App() {
           }
         />
 
-        {/* Generic dashboard route - redirects based on role */}
-        <Route
-          path="/dashboard"
-          element={<DashboardRouter />}
-        />
+        {/* Generic dashboard route */}
+        <Route path="/dashboard" element={<DashboardRouter />} />
 
-        {/* Catch all - redirect to landing */}
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

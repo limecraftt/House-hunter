@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
   Search, Bookmark, Plus, MessageSquare, User, Heart, MapPin,
-  CheckCircle, SlidersHorizontal, ChevronDown, X, Bed, Bath,
-  Maximize, Phone, Mail, Grid, List, ChevronRight, Bell
+  CheckCircle, SlidersHorizontal, ChevronDown, X, Grid, List,
+  ChevronRight, Bell, Mail, Lock, Eye, EyeOff, Home, Building2,
+  ArrowLeft
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import PropertyDetailPage from './PropertyDetailPage';
 
 const COUNTIES = [
@@ -27,6 +29,303 @@ const PROPERTIES = [
   { id: 12, title: "Executive Villa", location: "Runda, Nairobi", county: "Nairobi", price: 150000, size: 220, bedrooms: 4, bathrooms: 4, image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop", amenities: ["Pool", "Garden", "Security", "Parking", "Gym"], type: "Villa", verified: true },
 ];
 
+// ── Auth Modal ────────────────────────────────────────────────────────────────
+const AuthModal = ({ onClose, onLogin }) => {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState('choose'); // 'choose' | 'signin' | 'signup'
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  // Sign In state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Sign Up state
+  const [signupData, setSignupData] = useState({
+    fullName: '', email: '', password: '', confirmPassword: ''
+  });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const handleSignIn = async () => {
+    const newErrors = {};
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email is invalid';
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    setIsLoading(true);
+    await new Promise(r => setTimeout(r, 1000));
+
+    let userRole = 'landlord';
+    if (email === 'admin@househunter.com' && password === 'admin123') {
+      userRole = 'admin';
+    } else if (email.includes('landlord')) {
+      userRole = 'landlord';
+    }
+
+    localStorage.setItem('user', JSON.stringify({ email, role: userRole }));
+    localStorage.setItem('userRole', userRole);
+    localStorage.setItem('token', 'mock-jwt-token');
+    localStorage.setItem('isAuthenticated', 'true');
+
+    if (onLogin) onLogin(userRole);
+    setIsLoading(false);
+    onClose();
+
+    if (userRole === 'admin') navigate('/admin-dashboard');
+    else navigate('/landlord-dashboard');
+  };
+
+  const handleSignUp = () => {
+    const newErrors = {};
+    if (!signupData.fullName) newErrors.fullName = 'Full name is required';
+    if (!signupData.email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(signupData.email)) newErrors.email = 'Email is invalid';
+    if (!signupData.password) newErrors.password = 'Password is required';
+    else if (signupData.password.length < 6) newErrors.password = 'Min 6 characters';
+    if (signupData.password !== signupData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!agreedToTerms) newErrors.terms = 'You must agree to the terms';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    setIsLoading(true);
+    setTimeout(() => {
+      localStorage.setItem('user', JSON.stringify({ email: signupData.email, name: signupData.fullName, role: 'landlord' }));
+      localStorage.setItem('userRole', 'landlord');
+      localStorage.setItem('isAuthenticated', 'true');
+      if (onLogin) onLogin('landlord');
+      setIsLoading(false);
+      onClose();
+      navigate('/landlord-dashboard');
+    }, 1000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            {mode !== 'choose' && (
+              <button onClick={() => { setMode('choose'); setErrors({}); }} className="p-1.5 rounded-lg hover:bg-gray-100">
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+            )}
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm leading-tight">Landlord Access</p>
+              <p className="text-xs text-gray-500">List & manage your properties</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="px-5 py-5">
+
+          {/* ── CHOOSE MODE ── */}
+          {mode === 'choose' && (
+            <div>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Home className="w-8 h-8 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Welcome, Landlord!</h2>
+                <p className="text-sm text-gray-500 mt-1">Sign in or create an account to list your properties</p>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => setMode('signin')}
+                  className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold text-base hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                >
+                  <Mail className="w-5 h-5" />
+                  Sign In to My Account
+                </button>
+                <button
+                  onClick={() => setMode('signup')}
+                  className="w-full border-2 border-blue-600 text-blue-600 py-3.5 rounded-xl font-semibold text-base hover:bg-blue-50 transition flex items-center justify-center gap-2"
+                >
+                  <Building2 className="w-5 h-5" />
+                  Create Landlord Account
+                </button>
+              </div>
+
+              <p className="text-center text-xs text-gray-400 mt-5">
+                Only landlords need an account. Tenants browse freely.
+              </p>
+            </div>
+          )}
+
+          {/* ── SIGN IN MODE ── */}
+          {mode === 'signin' && (
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-5">Sign In</h2>
+              <div className="space-y-4">
+                {errors.general && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                    {errors.general}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSignIn()}
+                      className={`w-full pl-10 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm`}
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSignIn()}
+                      className={`w-full pl-10 pr-10 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm`}
+                      placeholder="Enter your password"
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                </div>
+                <button
+                  onClick={handleSignIn}
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-50 text-sm"
+                >
+                  {isLoading ? 'Signing In...' : 'Sign In'}
+                </button>
+                <p className="text-center text-sm text-gray-600">
+                  No account?{' '}
+                  <button onClick={() => { setMode('signup'); setErrors({}); }} className="text-blue-600 font-semibold hover:underline">
+                    Create one
+                  </button>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── SIGN UP MODE ── */}
+          {mode === 'signup' && (
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-5">Create Landlord Account</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={signupData.fullName}
+                      onChange={e => setSignupData({ ...signupData, fullName: e.target.value })}
+                      className={`w-full pl-10 pr-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm`}
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  {errors.fullName && <p className="mt-1 text-xs text-red-500">{errors.fullName}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="email"
+                      value={signupData.email}
+                      onChange={e => setSignupData({ ...signupData, email: e.target.value })}
+                      className={`w-full pl-10 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm`}
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={signupData.password}
+                      onChange={e => setSignupData({ ...signupData, password: e.target.value })}
+                      className={`w-full pl-10 pr-10 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm`}
+                      placeholder="Create a password"
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="password"
+                      value={signupData.confirmPassword}
+                      onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                      className={`w-full pl-10 pr-4 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm`}
+                      placeholder="Confirm your password"
+                    />
+                  </div>
+                  {errors.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>}
+                </div>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={e => setAgreedToTerms(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 accent-blue-600"
+                  />
+                  <span className="text-xs text-gray-600">
+                    I agree to the <a href="#" className="text-blue-600">Terms of Service</a> and <a href="#" className="text-blue-600">Privacy Policy</a>
+                  </span>
+                </label>
+                {errors.terms && <p className="text-xs text-red-500">{errors.terms}</p>}
+                <button
+                  onClick={handleSignUp}
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-50 text-sm"
+                >
+                  {isLoading ? 'Creating Account...' : 'Create Landlord Account'}
+                </button>
+                <p className="text-center text-sm text-gray-600">
+                  Already have an account?{' '}
+                  <button onClick={() => { setMode('signin'); setErrors({}); }} className="text-blue-600 font-semibold hover:underline">
+                    Sign In
+                  </button>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Property Card ─────────────────────────────────────────────────────────────
 const PropertyCard = ({ property, isFavorite, onToggleFavorite, onViewDetails, view }) => {
   if (view === 'list') {
@@ -47,9 +346,6 @@ const PropertyCard = ({ property, isFavorite, onToggleFavorite, onViewDetails, v
           <div>
             <div className="text-blue-600 font-bold text-base">KSh {property.price.toLocaleString()} <span className="text-xs text-gray-500 font-normal">per month</span></div>
             <div className="text-gray-900 font-semibold text-sm mt-0.5 line-clamp-2">{property.title}</div>
-            <p className="text-xs text-gray-500 mt-1 line-clamp-2 hidden md:block">
-              Beautiful {property.type.toLowerCase()} in {property.location} — {property.bedrooms} bed{property.bedrooms > 1 ? 's' : ''}, {property.amenities.slice(0, 2).join(', ')}.
-            </p>
           </div>
           <div className="flex items-center gap-1 mt-2">
             <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
@@ -87,7 +383,6 @@ const PropertyCard = ({ property, isFavorite, onToggleFavorite, onViewDetails, v
 // ── Mobile Filter Chips ───────────────────────────────────────────────────────
 const MobileFilterChips = ({ filters, setFilters, selectedCounty, onCountyChange, propertyCounts }) => {
   const [openPanel, setOpenPanel] = useState(null);
-
   const priceOptions = [
     { label: 'Any Price', value: '' },
     { label: 'Under 10K', value: '0-10000' },
@@ -120,7 +415,6 @@ const MobileFilterChips = ({ filters, setFilters, selectedCounty, onCountyChange
           </button>
         ))}
       </div>
-
       {openPanel === 'region' && (
         <div className="mx-4 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg p-3 z-30 relative">
           <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto">
@@ -215,7 +509,6 @@ const DesktopSidebar = ({ filters, setFilters, selectedCounty, onCountyChange, p
           })}
         </div>
       </div>
-
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="font-semibold text-gray-900 text-sm">Price, KSh</span>
@@ -248,7 +541,6 @@ const DesktopSidebar = ({ filters, setFilters, selectedCounty, onCountyChange, p
           <button className="text-xs text-blue-600 hover:underline font-semibold">SAVE</button>
         </div>
       </div>
-
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="font-semibold text-gray-900 text-sm">Property Type</span>
@@ -271,7 +563,8 @@ const DesktopSidebar = ({ filters, setFilters, selectedCounty, onCountyChange, p
 };
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
-const Dashboard = ({ onLogout }) => {
+const Dashboard = ({ onLogout, onLogin }) => {
+  const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
   const [selectedCounty, setSelectedCounty] = useState('All Counties');
   const [detailProperty, setDetailProperty] = useState(null);
@@ -279,6 +572,7 @@ const Dashboard = ({ onLogout }) => {
   const [view, setView] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ minPrice: '', maxPrice: '', bedrooms: '', priceRange: '', propertyType: '' });
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const toggleFavorite = (id) => setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
 
@@ -302,6 +596,8 @@ const Dashboard = ({ onLogout }) => {
 
   const savedProperties = PROPERTIES.filter(p => favorites.includes(p.id));
   const clearFilters = () => { setFilters({ minPrice: '', maxPrice: '', bedrooms: '', priceRange: '', propertyType: '' }); setSelectedCounty('All Counties'); };
+
+  const handleLandlordAccess = () => setShowAuthModal(true);
 
   if (detailProperty) {
     return (
@@ -333,17 +629,20 @@ const Dashboard = ({ onLogout }) => {
 
   return (
     <>
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onLogin={onLogin}
+        />
+      )}
+
       {/* ══════════ DESKTOP (md+) ══════════ */}
       <div className="hidden md:flex flex-col min-h-screen bg-gray-100">
         <header className="bg-blue-600 sticky top-0 z-40 shadow-md">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
             <div className="flex items-center gap-2 flex-shrink-0">
-              <img
-                src="/logo.png"
-                alt="House Hunter"
-                className="w-10 h-10 object-contain rounded-lg"
-                onError={e => { e.target.style.display = 'none'; }}
-              />
+              <img src="/logo.png" alt="House Hunter" className="w-10 h-10 object-contain rounded-lg" onError={e => { e.target.style.display = 'none'; }} />
               <span className="text-xl font-black text-white tracking-tight">House Hunter</span>
             </div>
             <div className="flex-1 flex items-center bg-white rounded-xl overflow-hidden shadow-sm">
@@ -355,16 +654,15 @@ const Dashboard = ({ onLogout }) => {
               </button>
             </div>
             <div className="flex items-center gap-4 flex-shrink-0 text-sm">
-              <button className="text-white/80 hover:text-white font-medium" onClick={onLogout}>Sign in</button>
+              <button className="text-white/80 hover:text-white font-medium" onClick={handleLandlordAccess}>Sign in</button>
               <span className="text-white/30">|</span>
-              <button className="text-white/80 hover:text-white font-medium">Registration</button>
-              <button className="bg-white text-blue-600 font-bold px-5 py-2 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1.5">
+              <button className="text-white/80 hover:text-white font-medium" onClick={handleLandlordAccess}>Registration</button>
+              <button onClick={handleLandlordAccess} className="bg-white text-blue-600 font-bold px-5 py-2 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1.5">
                 <Plus className="w-4 h-4" /> SELL
               </button>
             </div>
           </div>
         </header>
-
         <div className="flex flex-1 max-w-7xl mx-auto w-full">
           <DesktopSidebar filters={filters} setFilters={setFilters} selectedCounty={selectedCounty}
             onCountyChange={setSelectedCounty} propertyCounts={propertyCounts} />
@@ -389,25 +687,13 @@ const Dashboard = ({ onLogout }) => {
 
       {/* ══════════ MOBILE (below md) ══════════ */}
       <div className="flex flex-col min-h-screen md:hidden bg-gray-50">
-
-        {/* ── Redesigned Mobile Header ── */}
         <div className="sticky top-0 z-40">
-          {/* Top bar: logo + brand + bell */}
-          <div
-            className="flex items-center justify-between px-4 pt-10 pb-3"
-            style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)' }}
-          >
+          <div className="flex items-center justify-between px-4 pt-10 pb-3"
+            style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)' }}>
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white/15 flex items-center justify-center shadow-lg border border-white/20">
-                <img
-                  src="/logo.png"
-                  alt="House Hunter"
-                  className="w-9 h-9 object-contain"
-                  onError={e => {
-                    e.target.style.display = 'none';
-                    e.target.parentNode.innerHTML = '<span style="font-size:20px;font-weight:900;color:white;">HH</span>';
-                  }}
-                />
+                <img src="/logo.png" alt="House Hunter" className="w-9 h-9 object-contain"
+                  onError={e => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<span style="font-size:20px;font-weight:900;color:white;">HH</span>'; }} />
               </div>
               <div>
                 <p className="text-white font-black text-lg leading-tight tracking-tight">House Hunter</p>
@@ -419,45 +705,29 @@ const Dashboard = ({ onLogout }) => {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full border border-blue-600"></span>
             </button>
           </div>
-
-          {/* Search bar */}
-          <div
-            className="px-4 pb-4"
-            style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)' }}
-          >
+          <div className="px-4 pb-4"
+            style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)' }}>
             <div className="flex items-center bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="pl-4">
-                <Search className="w-4 h-4 text-blue-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search properties, locations..."
-                value={searchQuery}
+              <div className="pl-4"><Search className="w-4 h-4 text-blue-400" /></div>
+              <input type="text" placeholder="Search properties, locations..." value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="flex-1 px-3 py-3 text-sm text-gray-700 outline-none placeholder-gray-400 bg-transparent"
-              />
+                className="flex-1 px-3 py-3 text-sm text-gray-700 outline-none placeholder-gray-400 bg-transparent" />
               {searchQuery ? (
-                <button onClick={() => setSearchQuery('')} className="pr-3">
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
+                <button onClick={() => setSearchQuery('')} className="pr-3"><X className="w-4 h-4 text-gray-400" /></button>
               ) : (
                 <div className="px-3 py-2 mr-1">
-                  <div className="bg-blue-600 rounded-xl px-3 py-1.5">
-                    <Search className="w-4 h-4 text-white" />
-                  </div>
+                  <div className="bg-blue-600 rounded-xl px-3 py-1.5"><Search className="w-4 h-4 text-white" /></div>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Filter chips */}
         <div className="bg-white py-3 shadow-sm">
           <MobileFilterChips filters={filters} setFilters={setFilters} selectedCounty={selectedCounty}
             onCountyChange={setSelectedCounty} propertyCounts={propertyCounts} />
         </div>
 
-        {/* Content */}
         <div className="flex-1 pb-20">
           {activeTab === 'home' && (
             <div className="px-4 pt-4">
@@ -506,15 +776,28 @@ const Dashboard = ({ onLogout }) => {
             </div>
           )}
           {activeTab === 'profile' && (
-            <div className="px-4 pt-4">
-              <div className="bg-white rounded-2xl p-5 text-center mb-4 border border-gray-100">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <User className="w-8 h-8 text-white" />
+            <div className="px-4 pt-6">
+              {/* Landlord CTA Card */}
+              <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 mb-4 text-white">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-base">Are you a Landlord?</p>
+                    <p className="text-blue-100 text-xs">List your properties & reach tenants</p>
+                  </div>
                 </div>
-                <p className="font-bold text-gray-900">user@example.com</p>
-                <p className="text-sm text-gray-500">Tenant Account</p>
+                <button
+                  onClick={handleLandlordAccess}
+                  className="w-full bg-white text-blue-600 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-50 transition"
+                >
+                  Sign In / Create Account
+                </button>
               </div>
-              <button onClick={onLogout} className="w-full bg-red-50 text-red-600 py-3 rounded-xl font-semibold text-sm border border-red-100">Log Out</button>
+              <p className="text-center text-xs text-gray-400 px-4">
+                Tenants don't need an account — browse freely!
+              </p>
             </div>
           )}
         </div>
@@ -529,10 +812,18 @@ const Dashboard = ({ onLogout }) => {
               { id: 'messages', icon: <MessageSquare className="w-5 h-5" />, label: 'Messages' },
               { id: 'profile', icon: <User className="w-5 h-5" />, label: 'Profile' },
             ].map(tab => (
-              <button key={tab.id} onClick={() => !tab.isCenter && setActiveTab(tab.id)} className="flex flex-col items-center justify-center gap-0.5 py-1">
+              <button key={tab.id}
+                onClick={() => {
+                  if (tab.isCenter) { handleLandlordAccess(); return; }
+                  if (tab.id === 'profile') { setActiveTab('profile'); return; }
+                  setActiveTab(tab.id);
+                }}
+                className="flex flex-col items-center justify-center gap-0.5 py-1">
                 {tab.isCenter ? (
                   <>
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center -mt-5 shadow-lg"><Plus className="w-5 h-5 text-white" /></div>
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center -mt-5 shadow-lg">
+                      <Plus className="w-5 h-5 text-white" />
+                    </div>
                     <span className="text-[10px] font-medium text-gray-400 mt-0.5">Sell</span>
                   </>
                 ) : (
