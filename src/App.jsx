@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { supabase, getProfile } from './lib/supabase';
 import Landing from './pages/Landing';
 import SignIn from './components/auth/SignIn';
 import SignUp from './components/auth/SignUp';
@@ -8,40 +9,49 @@ import LandlordDashboard from './pages/LandlordDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('isAuthenticated') === 'true';
-  });
-
-  const [userRole, setUserRole] = useState(() => {
-    return localStorage.getItem('userRole') || null;
-  });
+  const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem('isAuthenticated', isAuthenticated);
-  }, [isAuthenticated]);
+    // Get initial session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        const { data: profile } = await getProfile(session.user.id);
+        setUserRole(profile?.role || session.user.user_metadata?.role || null);
+      }
+      setLoading(false);
+    });
 
-  useEffect(() => {
-    if (userRole) {
-      localStorage.setItem('userRole', userRole);
-    } else {
-      localStorage.removeItem('userRole');
-    }
-  }, [userRole]);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        const { data: profile } = await getProfile(session.user.id);
+        setUserRole(profile?.role || session.user.user_metadata?.role || null);
+      } else {
+        setUser(null);
+        setUserRole(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleLogin = (role) => {
-    setIsAuthenticated(true);
     setUserRole(role);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
     setUserRole(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
     window.location.href = '/';
   };
+
+  const isAuthenticated = !!user;
 
   const DashboardRouter = () => {
     if (!isAuthenticated) return <Navigate to="/signin" replace />;
@@ -51,33 +61,42 @@ function App() {
     return <Navigate to="/signin" replace />;
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 text-sm font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Landing />} />
-
-        {/* Auth Routes */}
         <Route path="/signin" element={isAuthenticated ? <DashboardRouter /> : <SignIn onLogin={handleLogin} />} />
         <Route path="/signup" element={isAuthenticated ? <DashboardRouter /> : <SignUp onLogin={handleLogin} />} />
-
-        {/* Tenant Dashboard - public, no login needed */}
         <Route
           path="/tenant-dashboard"
-          element={<Dashboard onLogout={handleLogout} onLogin={handleLogin} />}
+          element={
+            <Dashboard
+              onLogout={handleLogout}
+              onLogin={handleLogin}
+              user={user}
+              userRole={userRole}
+            />
+          }
         />
-
-        {/* Landlord Dashboard - protected */}
         <Route
           path="/landlord-dashboard"
           element={
             isAuthenticated && userRole === 'landlord' ?
-            <LandlordDashboard onLogout={handleLogout} /> :
+            <LandlordDashboard onLogout={handleLogout} user={user} /> :
             <Navigate to="/signin" replace />
           }
         />
-
-        {/* Admin Dashboard - protected */}
         <Route
           path="/admin-dashboard"
           element={
@@ -86,11 +105,7 @@ function App() {
             <Navigate to="/signin" replace />
           }
         />
-
-        {/* Generic dashboard route */}
         <Route path="/dashboard" element={<DashboardRouter />} />
-
-        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
