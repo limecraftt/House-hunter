@@ -275,7 +275,6 @@ const DesktopSidebar = ({ filters, setFilters, selectedCounty, onCountyChange, p
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
 const Dashboard = ({ onLogout }) => {
-  // ── ALL HOOKS MUST BE DECLARED FIRST - NO EARLY RETURNS BEFORE THIS ──
   const [favorites, setFavorites] = useState([]);
   const [selectedCounty, setSelectedCounty] = useState('All Counties');
   const [detailProperty, setDetailProperty] = useState(null);
@@ -307,7 +306,6 @@ const Dashboard = ({ onLogout }) => {
   const savedProperties = PROPERTIES.filter(p => favorites.includes(p.id));
   const clearFilters = () => { setFilters({ minPrice: '', maxPrice: '', bedrooms: '', priceRange: '', propertyType: '' }); setSelectedCounty('All Counties'); };
 
-  // ── NOW safe to conditionally render the detail page ──
   if (detailProperty) {
     return (
       <PropertyDetailPage
@@ -319,7 +317,6 @@ const Dashboard = ({ onLogout }) => {
     );
   }
 
-  // ── Shared property grid ──
   const PropertyGrid = ({ items }) => (
     items.length === 0 ? (
       <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
@@ -343,10 +340,14 @@ const Dashboard = ({ onLogout }) => {
       <div className="hidden md:flex flex-col min-h-screen bg-gray-100">
         <header className="bg-blue-600 sticky top-0 z-40 shadow-md">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
+            {/* Desktop Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 font-black text-sm">HH</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="House Hunter"
+                className="w-10 h-10 object-contain rounded-lg"
+                onError={e => { e.target.style.display = 'none'; }}
+              />
               <span className="text-xl font-black text-white tracking-tight">House Hunter</span>
             </div>
             <div className="flex-1 flex items-center bg-white rounded-xl overflow-hidden shadow-sm">
@@ -392,7 +393,20 @@ const Dashboard = ({ onLogout }) => {
 
       {/* ══════════ MOBILE (below md) ══════════ */}
       <div className="flex flex-col min-h-screen md:hidden bg-gray-100">
+
+        {/* Mobile Header with Logo + Search */}
         <div className="bg-blue-600 pt-10 pb-3 px-4 sticky top-0 z-40">
+          {/* Logo Row */}
+          <div className="flex items-center gap-2 mb-3">
+            <img
+              src="/logo.png"
+              alt="House Hunter"
+              className="w-9 h-9 object-contain rounded-lg"
+              onError={e => { e.target.style.display = 'none'; }}
+            />
+            <span className="text-white font-black text-lg tracking-tight">House Hunter</span>
+          </div>
+          {/* Search Row */}
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-white rounded-xl flex items-center px-3 py-2.5 gap-2 shadow-sm">
               <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
