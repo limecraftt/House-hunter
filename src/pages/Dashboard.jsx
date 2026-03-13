@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   Search, Bookmark, Plus, MessageSquare, User, Heart, MapPin,
   CheckCircle, SlidersHorizontal, ChevronDown, X, Bed, Bath,
-  Maximize, Phone, Mail, Grid, List, ChevronRight
+  Maximize, Phone, Mail, Grid, List, ChevronRight, Bell
 } from 'lucide-react';
 import PropertyDetailPage from './PropertyDetailPage';
 
@@ -192,7 +192,6 @@ const DesktopSidebar = ({ filters, setFilters, selectedCounty, onCountyChange, p
   const typeOptions = ['Apartment', 'House', 'Studio', 'Bedsitter', 'Villa', 'Penthouse'];
   return (
     <aside className="w-72 flex-shrink-0 space-y-4 pt-6 px-6">
-      {/* Location */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <span className="font-semibold text-gray-900 text-sm">Location</span>
@@ -217,7 +216,6 @@ const DesktopSidebar = ({ filters, setFilters, selectedCounty, onCountyChange, p
         </div>
       </div>
 
-      {/* Price */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="font-semibold text-gray-900 text-sm">Price, KSh</span>
@@ -251,7 +249,6 @@ const DesktopSidebar = ({ filters, setFilters, selectedCounty, onCountyChange, p
         </div>
       </div>
 
-      {/* Type */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="font-semibold text-gray-900 text-sm">Property Type</span>
@@ -340,7 +337,6 @@ const Dashboard = ({ onLogout }) => {
       <div className="hidden md:flex flex-col min-h-screen bg-gray-100">
         <header className="bg-blue-600 sticky top-0 z-40 shadow-md">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
-            {/* Desktop Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <img
                 src="/logo.png"
@@ -392,49 +388,83 @@ const Dashboard = ({ onLogout }) => {
       </div>
 
       {/* ══════════ MOBILE (below md) ══════════ */}
-      <div className="flex flex-col min-h-screen md:hidden bg-gray-100">
+      <div className="flex flex-col min-h-screen md:hidden bg-gray-50">
 
-        {/* Mobile Header with Logo + Search */}
-        <div className="bg-blue-600 pt-10 pb-3 px-4 sticky top-0 z-40">
-          {/* Logo Row */}
-          <div className="flex items-center gap-2 mb-3">
-            <img
-              src="/logo.png"
-              alt="House Hunter"
-              className="w-9 h-9 object-contain rounded-lg"
-              onError={e => { e.target.style.display = 'none'; }}
-            />
-            <span className="text-white font-black text-lg tracking-tight">House Hunter</span>
-          </div>
-          {/* Search Row */}
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-white rounded-xl flex items-center px-3 py-2.5 gap-2 shadow-sm">
-              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <input type="text" placeholder="Search in Houses & Apartments For..." value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="flex-1 text-sm text-gray-700 outline-none placeholder-gray-400 bg-transparent" />
+        {/* ── Redesigned Mobile Header ── */}
+        <div className="sticky top-0 z-40">
+          {/* Top bar: logo + brand + bell */}
+          <div
+            className="flex items-center justify-between px-4 pt-10 pb-3"
+            style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white/15 flex items-center justify-center shadow-lg border border-white/20">
+                <img
+                  src="/logo.png"
+                  alt="House Hunter"
+                  className="w-9 h-9 object-contain"
+                  onError={e => {
+                    e.target.style.display = 'none';
+                    e.target.parentNode.innerHTML = '<span style="font-size:20px;font-weight:900;color:white;">HH</span>';
+                  }}
+                />
+              </div>
+              <div>
+                <p className="text-white font-black text-lg leading-tight tracking-tight">House Hunter</p>
+                <p className="text-blue-200 text-xs font-medium">Find your dream home 🏠</p>
+              </div>
             </div>
-            <button className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <Bookmark className="w-5 h-5 text-white" />
+            <button className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center relative">
+              <Bell className="w-5 h-5 text-white" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full border border-blue-600"></span>
             </button>
+          </div>
+
+          {/* Search bar */}
+          <div
+            className="px-4 pb-4"
+            style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)' }}
+          >
+            <div className="flex items-center bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="pl-4">
+                <Search className="w-4 h-4 text-blue-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search properties, locations..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="flex-1 px-3 py-3 text-sm text-gray-700 outline-none placeholder-gray-400 bg-transparent"
+              />
+              {searchQuery ? (
+                <button onClick={() => setSearchQuery('')} className="pr-3">
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              ) : (
+                <div className="px-3 py-2 mr-1">
+                  <div className="bg-blue-600 rounded-xl px-3 py-1.5">
+                    <Search className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="bg-white py-3 sticky top-[72px] z-30 shadow-sm">
+        {/* Filter chips */}
+        <div className="bg-white py-3 shadow-sm">
           <MobileFilterChips filters={filters} setFilters={setFilters} selectedCounty={selectedCounty}
             onCountyChange={setSelectedCounty} propertyCounts={propertyCounts} />
         </div>
 
+        {/* Content */}
         <div className="flex-1 pb-20">
           {activeTab === 'home' && (
             <div className="px-4 pt-4">
-              <h2 className="text-base font-bold text-gray-900 mb-3">Houses & Apartments For Rent in Kenya</h2>
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>Sort by:</span>
-                  <button className="font-semibold text-gray-900">↑↓ Recommended</button>
-                  <span>|</span>
-                  <button>Any time</button>
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Properties For Rent</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{filteredProperties.length} listings in Kenya</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setView('grid')} className={`p-1.5 rounded-lg ${view === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400'}`}><Grid className="w-4 h-4" /></button>
