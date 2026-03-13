@@ -159,7 +159,7 @@ const HouseHunterLanding = () => {
             {/* Action Button - Mobile Optimized */}
             <div className="flex flex-col gap-4">
               <button
-                onClick={() => navigate('/signup')}
+                onClick={() => navigate('/tenant-dashboard')}
                 className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition shadow-lg"
               >
                 Browse Properties
@@ -282,7 +282,7 @@ const HouseHunterLanding = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
             <button
-              onClick={() => navigate('/signup')}
+              onClick={() => navigate('/tenant-dashboard')}
               className="w-full sm:w-auto bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition shadow-lg"
             >
               Get Started Free

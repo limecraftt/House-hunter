@@ -5,7 +5,7 @@ import SignIn from './components/auth/SignIn';
 import SignUp from './components/auth/SignUp';
 import Dashboard from './pages/Dashboard';
 import LandlordDashboard from './pages/LandlordDashboard';
-import AdminDashboard from './pages/AdminDashboard'; // Import the new admin dashboard
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   // Authentication state - check localStorage on mount
@@ -77,58 +77,54 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
-        
+
         {/* Auth Routes - redirect to appropriate dashboard if already authenticated */}
-        <Route 
-          path="/signin" 
+        <Route
+          path="/signin"
           element={
-            isAuthenticated ? 
-            <DashboardRouter /> : 
+            isAuthenticated ?
+            <DashboardRouter /> :
             <SignIn onLogin={handleLogin} />
-          } 
+          }
         />
-        <Route 
-          path="/signup" 
+        <Route
+          path="/signup"
           element={
-            isAuthenticated ? 
-            <DashboardRouter /> : 
+            isAuthenticated ?
+            <DashboardRouter /> :
             <SignUp onLogin={handleLogin} />
-          } 
+          }
         />
-        
-        {/* Protected Routes - Tenant Dashboard */}
-        <Route 
-          path="/tenant-dashboard" 
-          element={
-            isAuthenticated && userRole === 'tenant' ? 
-            <Dashboard onLogout={handleLogout} /> : 
-            <Navigate to="/signin" replace />
-          } 
+
+        {/* Public Route - Tenant Dashboard (no login required) */}
+        <Route
+          path="/tenant-dashboard"
+          element={<Dashboard onLogout={handleLogout} />}
         />
 
         {/* Protected Routes - Landlord Dashboard */}
-        <Route 
-          path="/landlord-dashboard" 
+        <Route
+          path="/landlord-dashboard"
           element={
-            isAuthenticated && userRole === 'landlord' ? 
-            <LandlordDashboard onLogout={handleLogout} /> : 
+            isAuthenticated && userRole === 'landlord' ?
+            <LandlordDashboard onLogout={handleLogout} /> :
             <Navigate to="/signin" replace />
-          } 
+          }
         />
 
         {/* Protected Routes - Admin Dashboard */}
-        <Route 
-          path="/admin-dashboard" 
+        <Route
+          path="/admin-dashboard"
           element={
-            isAuthenticated && userRole === 'admin' ? 
-            <AdminDashboard onLogout={handleLogout} /> : 
+            isAuthenticated && userRole === 'admin' ?
+            <AdminDashboard onLogout={handleLogout} /> :
             <Navigate to="/signin" replace />
-          } 
+          }
         />
 
         {/* Generic dashboard route - redirects based on role */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={<DashboardRouter />}
         />
 
